@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 
+import { t } from '@/constants/i18n';
 import { Screen } from '@/components/layout/Screen';
 import { Section } from '@/components/layout/Section';
 import { Avatar } from '@/components/ui/Avatar';
@@ -26,6 +27,8 @@ import { useCalendarEvents } from '@/hooks/use-calendar';
 import { createGroupInvite } from '@/lib/invites/invite-service';
 import { useGroups } from '@/hooks/use-groups';
 import { setActiveGroupId } from '@/lib/users/user-service';
+import { getAppLanguage, setAppLanguage } from '@/lib/i18n';
+import type { SupportedLanguage } from '@/lib/i18n/resources';
 
 export default function ProfileScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -33,6 +36,9 @@ export default function ProfileScreen() {
   const { user, signOut, refreshUser } = useAuthContext();
   const [inviteEmail, setInviteEmail] = React.useState('');
   const [inviteMessage, setInviteMessage] = React.useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = React.useState<SupportedLanguage>(
+    getAppLanguage()
+  );
 
   const { data: impressions } = useImpressions();
   const { data: goals } = useGoals();
@@ -56,7 +62,7 @@ export default function ProfileScreen() {
   async function handleCreateInvite() {
     if (!user?.activeGroupId) return;
     if (!inviteEmail.trim()) {
-      setInviteMessage('Enter an email to invite.');
+      setInviteMessage(t('profile.group.inviteEmailRequired'));
       return;
     }
     try {
@@ -65,7 +71,7 @@ export default function ProfileScreen() {
         inviteeEmail: inviteEmail.trim(),
         createdBy: user.uid,
       });
-      setInviteMessage(`Invite link generated for ${invite.invite.emailLower}.`);
+      setInviteMessage(t('profile.group.inviteCreated', { email: invite.invite.emailLower }));
       await Linking.openURL(invite.mailtoLink);
     } catch (e: unknown) {
       setInviteMessage(e instanceof Error ? e.message : 'Failed to create invite.');
@@ -77,10 +83,16 @@ export default function ProfileScreen() {
     try {
       await setActiveGroupId(user.uid, groupId);
       await refreshUser();
-      setInviteMessage(`Switched to group ${groupId}.`);
+      setInviteMessage(t('profile.group.switchDone', { groupId }));
     } catch (e: unknown) {
-      setInviteMessage(e instanceof Error ? e.message : 'Could not switch group.');
+      setInviteMessage(e instanceof Error ? e.message : t('profile.group.switchFailed'));
     }
+  }
+
+  async function handleChangeLanguage(lang: SupportedLanguage) {
+    await setAppLanguage(lang);
+    setSelectedLanguage(lang);
+    setInviteMessage(t('profile.language.updated', { lang: lang.toUpperCase() }));
   }
 
   return (
@@ -226,6 +238,38 @@ export default function ProfileScreen() {
           </View>
         </Section>
 
+        <Section title={t('profile.language.title')} style={styles.section}>
+          <View style={[styles.listCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <View style={styles.languageRow}>
+              {(['en', 'es', 'ca'] as SupportedLanguage[]).map((lang) => {
+                const active = selectedLanguage === lang;
+                return (
+                  <TouchableOpacity
+                    key={lang}
+                    onPress={() => handleChangeLanguage(lang)}
+                    style={[
+                      styles.languageButton,
+                      {
+                        backgroundColor: active ? c.primary : c.muted,
+                        borderColor: active ? c.primary : c.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.languageButtonText,
+                        { color: active ? c.primaryForeground : c.textSecondary },
+                      ]}
+                    >
+                      {lang.toUpperCase()}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </Section>
+
         {/* Sign out */}
         <TouchableOpacity
           style={[styles.signOutBtn, { backgroundColor: c.destructiveSubtle, borderColor: c.destructive }]}
@@ -315,6 +359,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inviteButtonText: {
+    ...Typography.bodySm,
+    fontWeight: '600',
+  },
+  languageRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  languageButton: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  languageButtonText: {
     ...Typography.bodySm,
     fontWeight: '600',
   },

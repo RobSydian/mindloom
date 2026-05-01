@@ -15,7 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuthContext } from '@/context/AuthContext';
 import { Colors, Typography, Spacing, Radius, Shadow, ComponentTokens } from '@/constants/theme';
+import { t } from '@/constants/i18n';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getAuthErrorKey } from '@/lib/errors/auth-errors';
 
 export default function LoginScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -33,7 +35,7 @@ export default function LoginScreen() {
 
   async function handleSignIn() {
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError(t('login.error.missingCredentials'));
       return;
     }
     setError(null);
@@ -42,7 +44,7 @@ export default function LoginScreen() {
       await signIn(email.trim(), password);
       router.replace('/(tabs)/dashboard');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Sign in failed.');
+      setError(t(getAuthErrorKey(e)));
     } finally {
       setIsLoading(false);
     }
@@ -71,19 +73,19 @@ export default function LoginScreen() {
               <Text style={styles.logoMarkText}>M</Text>
             </View>
             <Text style={styles.wordmark}>mindloom</Text>
-            <Text style={styles.tagline}>Your shared world, in detail.</Text>
+            <Text style={styles.tagline}>{t('login.tagline')}</Text>
           </View>
 
           {/* Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Welcome back</Text>
+            <Text style={styles.cardTitle}>{t('login.welcomeBack')}</Text>
 
             {/* Email */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('login.email')}</Text>
               <TextInput
                 style={[styles.input, emailFocused && styles.inputFocused]}
-                placeholder="you@example.com"
+                placeholder={t('login.emailPlaceholder')}
                 placeholderTextColor={c.textDisabled}
                 value={email}
                 onChangeText={setEmail}
@@ -98,10 +100,10 @@ export default function LoginScreen() {
 
             {/* Password */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>{t('login.password')}</Text>
               <TextInput
                 style={[styles.input, passwordFocused && styles.inputFocused]}
-                placeholder="••••••••"
+                placeholder={t('login.passwordPlaceholder')}
                 placeholderTextColor={c.textDisabled}
                 value={password}
                 onChangeText={setPassword}
@@ -127,16 +129,16 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color={c.primaryForeground} size="small" />
               ) : (
-                <Text style={styles.buttonText}>Sign in</Text>
+                <Text style={styles.buttonText}>{t('login.signIn')}</Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.actionsRow}>
               <TouchableOpacity onPress={() => router.push('/register')} style={styles.inlineAction}>
-                <Text style={styles.inlineActionText}>Create account</Text>
+                <Text style={styles.inlineActionText}>{t('login.createAccount')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={fillDemo} style={styles.inlineAction}>
-                <Text style={styles.inlineActionText}>Use demo account</Text>
+                <Text style={styles.inlineActionText}>{t('login.useDemo')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -144,7 +146,7 @@ export default function LoginScreen() {
               onPress={() => router.push('/register?mode=reset')}
               style={styles.demoRow}
             >
-              <Text style={styles.demoText}>Forgot password?</Text>
+              <Text style={styles.demoText}>{t('login.forgotPassword')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

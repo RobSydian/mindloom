@@ -14,6 +14,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { t } from '@/constants/i18n';
 import { Colors, ComponentTokens, Radius, Spacing, Typography } from '@/constants/theme';
 import { useAuthContext } from '@/context/AuthContext';
 import { createGroup } from '@/lib/groups/group-service';
@@ -37,7 +38,7 @@ export default function GroupOnboardingScreen() {
   async function handleCreateGroup() {
     if (!user) return;
     if (!groupName.trim()) {
-      setError('Group name is required.');
+      setError(t('onboarding.error.groupNameRequired'));
       return;
     }
 
@@ -52,14 +53,16 @@ export default function GroupOnboardingScreen() {
           inviteeEmail: inviteEmail.trim(),
           createdBy: user.uid,
         });
-        setMessage(`Group created. Invite link generated. Opened mail app for ${invite.invite.emailLower}.`);
+        setMessage(
+          t('onboarding.success.createdInvite', { email: invite.invite.emailLower })
+        );
         await Linking.openURL(invite.mailtoLink);
       } else {
-        setMessage(`Group created with ID: ${group.id}`);
+        setMessage(t('onboarding.success.createdWithId', { groupId: group.id }));
       }
       router.replace('/(tabs)/dashboard');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to create group.');
+      setError(e instanceof Error ? e.message : t('onboarding.error.createFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +71,7 @@ export default function GroupOnboardingScreen() {
   async function handleJoinByGroupId() {
     if (!user) return;
     if (!joinGroupId.trim()) {
-      setError('Enter a group ID.');
+      setError(t('onboarding.error.groupIdRequired'));
       return;
     }
     setError(null);
@@ -76,10 +79,10 @@ export default function GroupOnboardingScreen() {
     setIsLoading(true);
     try {
       await setActiveGroupId(user.uid, joinGroupId.trim());
-      setMessage('Joined group by ID.');
+      setMessage(t('onboarding.success.joined'));
       router.replace('/(tabs)/dashboard');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Could not join this group.');
+      setError(e instanceof Error ? e.message : t('onboarding.error.joinFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -93,29 +96,29 @@ export default function GroupOnboardingScreen() {
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
-            <Text style={styles.title}>Set up your shared space</Text>
+            <Text style={styles.title}>{t('onboarding.title')}</Text>
             <Text style={styles.subtitle}>
-              Create a group and optionally send an invite email. Or join using an existing group ID.
+              {t('onboarding.subtitle')}
             </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Group Name</Text>
+              <Text style={styles.label}>{t('onboarding.groupName')}</Text>
               <TextInput
                 style={styles.input}
                 value={groupName}
                 onChangeText={setGroupName}
-                placeholder="Weekend Memories"
+                placeholder={t('onboarding.groupNamePlaceholder')}
                 placeholderTextColor={c.textDisabled}
               />
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Invite Email (optional)</Text>
+              <Text style={styles.label}>{t('onboarding.inviteEmail')}</Text>
               <TextInput
                 style={styles.input}
                 value={inviteEmail}
                 onChangeText={setInviteEmail}
-                placeholder="friend@example.com"
+                placeholder={t('onboarding.inviteEmailPlaceholder')}
                 placeholderTextColor={c.textDisabled}
                 autoCapitalize="none"
                 keyboardType="email-address"
@@ -130,21 +133,21 @@ export default function GroupOnboardingScreen() {
               {isLoading ? (
                 <ActivityIndicator color={c.primaryForeground} />
               ) : (
-                <Text style={styles.buttonText}>Create group</Text>
+                <Text style={styles.buttonText}>{t('onboarding.createGroup')}</Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.separatorWrap}>
-              <Text style={styles.separatorText}>or</Text>
+              <Text style={styles.separatorText}>{t('onboarding.or')}</Text>
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Join by Group ID</Text>
+              <Text style={styles.label}>{t('onboarding.joinByGroupId')}</Text>
               <TextInput
                 style={styles.input}
                 value={joinGroupId}
                 onChangeText={setJoinGroupId}
-                placeholder="grp_xxxxxxxx"
+                placeholder={t('onboarding.joinByGroupIdPlaceholder')}
                 placeholderTextColor={c.textDisabled}
                 autoCapitalize="none"
               />
@@ -155,7 +158,7 @@ export default function GroupOnboardingScreen() {
               disabled={isLoading}
               onPress={handleJoinByGroupId}
             >
-              <Text style={styles.secondaryButtonText}>Join group</Text>
+              <Text style={styles.secondaryButtonText}>{t('onboarding.joinGroup')}</Text>
             </TouchableOpacity>
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}

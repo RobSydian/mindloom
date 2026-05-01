@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
 import 'react-native-reanimated';
+import '@/lib/i18n';
 
 import { AuthProvider } from '@/context/AuthContext';
 import { queryClient } from '@/lib/query/client';

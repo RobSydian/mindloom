@@ -13,9 +13,11 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { t } from '@/constants/i18n';
 import { Colors, ComponentTokens, Radius, Spacing, Typography } from '@/constants/theme';
 import { useAuthContext } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getAuthErrorKey } from '@/lib/errors/auth-errors';
 
 export default function RegisterScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -24,7 +26,7 @@ export default function RegisterScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isResetMode = mode === 'reset';
   const title = useMemo(
-    () => (isResetMode ? 'Reset password' : 'Create account'),
+    () => (isResetMode ? t('reset.title') : t('register.title')),
     [isResetMode]
   );
 
@@ -38,7 +40,7 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     if (!email.trim() || !password || !displayName.trim()) {
-      setError('Display name, email, and password are required.');
+      setError(t('register.error.missingFields'));
       return;
     }
     setError(null);
@@ -48,7 +50,7 @@ export default function RegisterScreen() {
       await register(email.trim(), password, displayName.trim());
       router.replace('/group-onboarding');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Registration failed.');
+      setError(t(getAuthErrorKey(e)));
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +58,7 @@ export default function RegisterScreen() {
 
   async function handleReset() {
     if (!email.trim()) {
-      setError('Please enter your email first.');
+      setError(t('reset.error.missingEmail'));
       return;
     }
     setError(null);
@@ -64,9 +66,9 @@ export default function RegisterScreen() {
     setIsLoading(true);
     try {
       await sendPasswordReset(email.trim());
-      setMessage('If this email is registered, a reset link has been sent.');
+      setMessage(t('reset.success.sent'));
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Could not send reset email.');
+      setError(t(getAuthErrorKey(e)));
     } finally {
       setIsLoading(false);
     }
@@ -84,24 +86,24 @@ export default function RegisterScreen() {
 
             {!isResetMode ? (
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Display Name</Text>
+                <Text style={styles.label}>{t('register.displayName')}</Text>
                 <TextInput
                   style={styles.input}
                   value={displayName}
                   onChangeText={setDisplayName}
-                  placeholder="Alex"
+                  placeholder={t('register.displayNamePlaceholder')}
                   placeholderTextColor={c.textDisabled}
                 />
               </View>
             ) : null}
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('register.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="you@example.com"
+                placeholder={t('register.emailPlaceholder')}
                 placeholderTextColor={c.textDisabled}
                 autoCapitalize="none"
                 keyboardType="email-address"
@@ -110,12 +112,12 @@ export default function RegisterScreen() {
 
             {!isResetMode ? (
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label}>{t('register.password')}</Text>
                 <TextInput
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="••••••••"
+                  placeholder={t('register.passwordPlaceholder')}
                   placeholderTextColor={c.textDisabled}
                   secureTextEntry
                 />
@@ -134,13 +136,13 @@ export default function RegisterScreen() {
                 <ActivityIndicator color={c.primaryForeground} />
               ) : (
                 <Text style={styles.buttonText}>
-                  {isResetMode ? 'Send reset email' : 'Create account'}
+                  {isResetMode ? t('reset.submit') : t('register.submit')}
                 </Text>
               )}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => router.replace('/login')} style={styles.linkRow}>
-              <Text style={styles.linkText}>Back to login</Text>
+              <Text style={styles.linkText}>{t('register.backToLogin')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

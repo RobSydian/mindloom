@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { t } from '@/constants/i18n';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useAuthContext } from '@/context/AuthContext';
 import { acceptGroupInvite } from '@/lib/invites/invite-service';
@@ -30,7 +31,7 @@ export default function InviteAcceptScreen() {
       return;
     }
     if (!inviteId || !token || !email) {
-      setError('Invite link is incomplete.');
+      setError(t('invite.error.incomplete'));
       return;
     }
 
@@ -46,7 +47,7 @@ export default function InviteAcceptScreen() {
       setDone(true);
       router.replace('/(tabs)/dashboard');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Could not accept invite.');
+      setError(e instanceof Error ? e.message : t('invite.error.acceptFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -55,11 +56,13 @@ export default function InviteAcceptScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.card}>
-        <Text style={styles.title}>Group invitation</Text>
+        <Text style={styles.title}>{t('invite.title')}</Text>
         <Text style={styles.subtitle}>
           {done
-            ? 'Invite accepted. Redirecting...'
-            : `You were invited as ${email ?? 'a group member'}.`}
+            ? t('invite.status.accepted')
+            : t('invite.status.invitedAs', {
+                email: email ?? t('invite.status.invitedAsFallback'),
+              })}
         </Text>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -72,7 +75,7 @@ export default function InviteAcceptScreen() {
           {isLoading ? (
             <ActivityIndicator color={c.primaryForeground} />
           ) : (
-            <Text style={styles.buttonText}>Accept invite</Text>
+            <Text style={styles.buttonText}>{t('invite.accept')}</Text>
           )}
         </TouchableOpacity>
       </View>
