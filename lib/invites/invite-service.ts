@@ -33,6 +33,16 @@ function toIsoAfterDays(days: number): string {
   return now.toISOString();
 }
 
+function toMillis(value: unknown): number {
+  if (!value) return NaN;
+  if (typeof value === 'string') return new Date(value).getTime();
+  if (typeof value === 'object' && value !== null && 'toDate' in value) {
+    const maybeTimestamp = value as { toDate: () => Date };
+    return maybeTimestamp.toDate().getTime();
+  }
+  return NaN;
+}
+
 export interface CreateInviteInput {
   groupId: string;
   inviteeEmail: string;
@@ -119,7 +129,7 @@ export async function acceptGroupInvite(input: AcceptInviteInput): Promise<strin
   if (invite.emailLower !== input.userEmail.trim().toLowerCase()) {
     throw new Error('This invite was issued for a different email.');
   }
-  if (new Date(invite.expiresAt).getTime() < Date.now()) {
+  if (toMillis(invite.expiresAt) < Date.now()) {
     throw new Error('Invite has expired.');
   }
   const hash = await sha256(input.rawToken);

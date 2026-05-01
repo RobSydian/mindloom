@@ -78,3 +78,17 @@ For multi-group testing (`User1` in `group_01` and `group_02`), use:
 - Feature data (impressions/calendar/goals) now supports Firebase services with owner-only mutations.
 - Invitations are email-link based and resolve through the `invite-accept` route.
 
+## 6) Admin SDK seed import (recommended)
+
+If you downloaded a Firebase Admin service key JSON, do this:
+
+1. Keep that key outside git (already ignored by `.gitignore` patterns).
+2. Replace placeholder UIDs in `firebase/seed.multi-group.payload.json`.
+3. Run:
+
+```bash
+pnpm seed:firestore -- --key "/absolute/path/to/your-service-account.json" --seed "./firebase/seed.multi-group.payload.json"
+```
+
+If `--seed` is omitted, the script defaults to `firebase/seed.multi-group.payload.json`.
+
