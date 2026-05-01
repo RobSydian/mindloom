@@ -3,5 +3,18 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.tabs.enabled": true,
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.lineHeight": 1.2,
+  "terminal.integrated.letterSpacing": 0.4,
+  "terminal.integrated.cursorStyle": "line",
+  "terminal.integrated.cursorBlinking": true,
+  "terminal.integrated.scrollback": 10000,
+  "terminal.integrated.gpuAcceleration": "on",
+  "terminal.integrated.env.osx": {
+    "TERM": "xterm-256color"
+  },
+"terminal.integrated.fontFamily": "MesloLGS NF, JetBrainsMono Nerd Font, Menlo, Monaco, 'Courier New', monospace"
 }
