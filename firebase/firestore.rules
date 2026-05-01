@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUserDoc(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function userGroupId(uid) {
+      return userDoc(uid).data.activeGroupId;
+    }
+    
+    function authEmailLower() {
+      return request.auth.token.email is string
+        ? request.auth.token.email.lower()
+        : '';
+    }
+
+    function sameGroup(resourceData) {
+      return signedIn() &&
+        userDoc(request.auth.uid).exists() &&
+        userGroupId(request.auth.uid) != null &&
+        resourceData.groupId == userGroupId(request.auth.uid);
+    }
+
+    match /users/{uid} {
+      allow read, delete: if isUserDoc(uid);
+      allow create: if isUserDoc(uid) &&
+        request.resource.data.uid == uid &&
+        request.resource.data.email is string;
+      allow update: if isUserDoc(uid) &&
+        request.resource.data.uid == uid &&
+        request.resource.data.email == resource.data.email;
+    }
+
+    match /groups/{groupId} {
+      allow read: if signedIn() && resource.data.memberIds.hasAny([request.auth.uid]);
+      allow create: if signedIn() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.memberIds.hasAny([request.auth.uid]);
+      allow update, delete: if signedIn() &&
+        (resource.data.createdBy == request.auth.uid ||
+          request.resource.data.memberIds.hasAny([request.auth.uid]));
+    }
+
+    match /groupInvites/{inviteId} {
+      allow read: if signedIn() &&
+        (resource.data.createdBy == request.auth.uid ||
+          resource.data.emailLower == authEmailLower());
+
+      allow create: if signedIn() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.status == 'pending';
+
+      allow update: if signedIn() &&
+        (resource.data.createdBy == request.auth.uid ||
+          resource.data.emailLower == authEmailLower());
+
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /impressions/{docId} {
+      allow read: if sameGroup(resource.data);
+      allow create: if sameGroup(request.resource.data) &&
+        request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if sameGroup(resource.data) &&
+        resource.data.authorId == request.auth.uid;
+    }
+
+    match /calendarEvents/{docId} {
+      allow read: if sameGroup(resource.data);
+      allow create: if sameGroup(request.resource.data) &&
+        request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if sameGroup(resource.data) &&
+        resource.data.authorId == request.auth.uid;
+    }
+
+    match /goals/{docId} {
+      allow read: if sameGroup(resource.data);
+      allow create: if sameGroup(request.resource.data) &&
+        request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if sameGroup(resource.data) &&
+        resource.data.authorId == request.auth.uid;
+    }
+  }
+}

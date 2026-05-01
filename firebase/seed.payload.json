@@ -1,0 +1,82 @@
+{
+  "sharedGroup": {
+    "id": "group_01",
+    "name": "Mindloom Shared Space",
+    "createdBy": "REPLACE_WITH_AUTH_UID_1",
+    "memberIds": [
+      "REPLACE_WITH_AUTH_UID_1",
+      "REPLACE_WITH_AUTH_UID_2"
+    ]
+  },
+  "users": [
+    {
+      "uid": "REPLACE_WITH_AUTH_UID_1",
+      "email": "alex@mindloom.app",
+      "displayName": "Alex",
+      "photoURL": null,
+      "activeGroupId": "group_01"
+    },
+    {
+      "uid": "REPLACE_WITH_AUTH_UID_2",
+      "email": "sam@mindloom.app",
+      "displayName": "Sam",
+      "photoURL": null,
+      "activeGroupId": "group_01"
+    }
+  ],
+  "impressions": [
+    {
+      "id": "imp_01",
+      "authorId": "REPLACE_WITH_AUTH_UID_1",
+      "groupId": "group_01",
+      "placeName": "Cafe Procope",
+      "description": "One of the oldest cafes in Paris.",
+      "rating": 5,
+      "images": [],
+      "location": {
+        "latitude": 48.852872,
+        "longitude": 2.340172,
+        "address": "13 Rue de l'Ancienne Comedie, 75006 Paris"
+      }
+    }
+  ],
+  "calendarEvents": [
+    {
+      "id": "evt_01",
+      "authorId": "REPLACE_WITH_AUTH_UID_1",
+      "groupId": "group_01",
+      "title": "Dinner at Septime",
+      "description": "Reservation for 2 at 8pm",
+      "date": "2026-05-03",
+      "time": "20:00"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal_01",
+      "authorId": "REPLACE_WITH_AUTH_UID_1",
+      "groupId": "group_01",
+      "title": "Visit 3 new arrondissements",
+      "description": "Explore neighborhoods we have not been to yet.",
+      "period": "weekly",
+      "periodLabel": "Week of Apr 28",
+      "status": "in_progress",
+      "statusReason": null
+    }
+  ]
+  ,
+  "groupInvites": [
+    {
+      "id": "inv_01",
+      "groupId": "group_01",
+      "emailLower": "sam@mindloom.app",
+      "role": "member",
+      "status": "pending",
+      "tokenHash": "REPLACE_WITH_SHA256_HASH",
+      "expiresAt": "2026-12-31T00:00:00.000Z",
+      "createdBy": "REPLACE_WITH_AUTH_UID_1",
+      "acceptedBy": null,
+      "acceptedAt": null
+    }
+  ]
+}

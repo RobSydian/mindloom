@@ -1,0 +1,89 @@
+{
+  "users": [
+    {
+      "uid": "4AUC1S66r9ZwvcxIpWowTLu0BxE2",
+      "email": "user1@mindloom.app",
+      "displayName": "User1",
+      "photoURL": null,
+      "activeGroupId": "group_01"
+    },
+    {
+      "uid": "Wtj8kgrzxqc8grVFCDagZOpOC6h1",
+      "email": "user2@mindloom.app",
+      "displayName": "User2",
+      "photoURL": null,
+      "activeGroupId": "group_01"
+    },
+    {
+      "uid": "ZBiIhCX3oAdrUoUAXWgqA0HqDci2",
+      "email": "user3@mindloom.app",
+      "displayName": "User3",
+      "photoURL": null,
+      "activeGroupId": "group_02"
+    }
+  ],
+  "groups": [
+    {
+      "id": "group_01",
+      "name": "Group One (User1 + User2)",
+      "createdBy": "4AUC1S66r9ZwvcxIpWowTLu0BxE2",
+      "memberIds": ["4AUC1S66r9ZwvcxIpWowTLu0BxE2", "Wtj8kgrzxqc8grVFCDagZOpOC6h1"]
+    },
+    {
+      "id": "group_02",
+      "name": "Group Two (User1 + User3)",
+      "createdBy": "4AUC1S66r9ZwvcxIpWowTLu0BxE2",
+      "memberIds": ["4AUC1S66r9ZwvcxIpWowTLu0BxE2", "ZBiIhCX3oAdrUoUAXWgqA0HqDci2"]
+    }
+  ],
+  "groupInvites": [
+    {
+      "id": "inv_user2_to_group1",
+      "groupId": "group_01",
+      "emailLower": "user2@mindloom.app",
+      "role": "member",
+      "status": "accepted",
+      "tokenHash": "testUserAlreadyInvited",
+      "expiresAt": "2026-12-31T00:00:00.000Z",
+      "createdBy": "4AUC1S66r9ZwvcxIpWowTLu0BxE2",
+      "acceptedBy": "Wtj8kgrzxqc8grVFCDagZOpOC6h1",
+      "acceptedAt": "2026-01-01T12:00:00.000Z"
+    },
+    {
+      "id": "inv_user3_to_group2",
+      "groupId": "group_02",
+      "emailLower": "user3@mindloom.app",
+      "role": "member",
+      "status": "accepted",
+      "tokenHash": "testUserAlreadyInvited",
+      "expiresAt": "2026-12-31T00:00:00.000Z",
+      "createdBy": "4AUC1S66r9ZwvcxIpWowTLu0BxE2",
+      "acceptedBy": "ZBiIhCX3oAdrUoUAXWgqA0HqDci2",
+      "acceptedAt": "2026-01-01T12:00:00.000Z"
+    }
+  ],
+  "impressions": [
+    {
+      "id": "imp_g1_user1_01",
+      "authorId": "4AUC1S66r9ZwvcxIpWowTLu0BxE2",
+      "groupId": "group_01",
+      "placeName": "Cafe One",
+      "description": "Visible to User1 and User2 only",
+      "rating": 5,
+      "images": [],
+      "location": null
+    },
+    {
+      "id": "imp_g2_user1_01",
+      "authorId": "4AUC1S66r9ZwvcxIpWowTLu0BxE2",
+      "groupId": "group_02",
+      "placeName": "Cafe Two",
+      "description": "Visible to User1 and User3 only",
+      "rating": 4,
+      "images": [],
+      "location": null
+    }
+  ],
+  "calendarEvents": [],
+  "goals": []
+}

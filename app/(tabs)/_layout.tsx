@@ -1,33 +1,92 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
+import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
+import { useAuthContext } from '@/context/AuthContext';
+import { Colors, ComponentTokens, Typography } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() ?? 'light';
+  const c = Colors[colorScheme];
+  const { user, isLoading } = useAuthContext();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return <Redirect href="/login" />;
+  }
+
+  if (!user.activeGroupId) {
+    return <Redirect href="/group-onboarding" />;
+  }
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+        tabBarActiveTintColor: c.tabActive,
+        tabBarInactiveTintColor: c.tabInactive,
+        tabBarStyle: {
+          backgroundColor: c.tabBackground,
+          borderTopColor: c.border,
+          borderTopWidth: 1,
+          height: ComponentTokens.tab.height + (Platform.OS === 'ios' ? 20 : 0),
+          paddingBottom: Platform.OS === 'ios' ? 20 : ComponentTokens.tab.paddingBottom,
+        },
+        tabBarLabelStyle: {
+          ...Typography.tabLabel,
+        },
+      }}
+    >
       <Tabs.Screen
-        name="index"
+        name="dashboard"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Dashboard',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={ComponentTokens.tab.iconSize} name="square.grid.2x2.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="impressions"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Impressions',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={ComponentTokens.tab.iconSize} name="photo.stack.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={ComponentTokens.tab.iconSize} name="calendar" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="goals"
+        options={{
+          title: 'Goals',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={ComponentTokens.tab.iconSize} name="checkmark.circle.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={ComponentTokens.tab.iconSize} name="person.fill" color={color} />
+          ),
         }}
       />
     </Tabs>

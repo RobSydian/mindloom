@@ -1,0 +1,87 @@
+{
+  "collections": {
+    "users": {
+      "documentId": "{uid}",
+      "fields": {
+        "uid": "string",
+        "email": "string",
+        "displayName": "string",
+        "photoURL": "string | null",
+        "activeGroupId": "string | null",
+        "createdAt": "timestamp",
+        "updatedAt": "timestamp"
+      }
+    },
+    "groups": {
+      "documentId": "{groupId}",
+      "fields": {
+        "name": "string",
+        "createdBy": "string",
+        "memberIds": "string[]",
+        "createdAt": "timestamp",
+        "updatedAt": "timestamp"
+      }
+    },
+    "groupInvites": {
+      "documentId": "{inviteId}",
+      "fields": {
+        "groupId": "string",
+        "emailLower": "string",
+        "role": "member",
+        "status": "pending | accepted | expired | revoked",
+        "tokenHash": "string",
+        "expiresAt": "timestamp",
+        "createdBy": "string",
+        "createdAt": "timestamp",
+        "acceptedBy": "string | null",
+        "acceptedAt": "timestamp | null"
+      }
+    },
+    "impressions": {
+      "documentId": "{impressionId}",
+      "fields": {
+        "authorId": "string",
+        "groupId": "string",
+        "placeName": "string",
+        "description": "string",
+        "rating": "number",
+        "images": "string[]",
+        "location": {
+          "latitude": "number",
+          "longitude": "number",
+          "address": "string | optional"
+        },
+        "createdAt": "timestamp",
+        "updatedAt": "timestamp"
+      }
+    },
+    "calendarEvents": {
+      "documentId": "{eventId}",
+      "fields": {
+        "authorId": "string",
+        "groupId": "string",
+        "title": "string",
+        "description": "string",
+        "date": "string (YYYY-MM-DD)",
+        "time": "string | null",
+        "createdAt": "timestamp",
+        "updatedAt": "timestamp"
+      }
+    },
+    "goals": {
+      "documentId": "{goalId}",
+      "fields": {
+        "authorId": "string",
+        "groupId": "string",
+        "title": "string",
+        "description": "string",
+        "period": "weekly | monthly",
+        "periodLabel": "string",
+        "status": "pending | in_progress | finished | blocked | cancelled",
+        "statusReason": "string | null",
+        "createdAt": "timestamp",
+        "updatedAt": "timestamp"
+      }
+    }
+  }
+}
