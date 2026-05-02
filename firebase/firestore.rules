@@ -1,92 +1,134 @@
 rules_version = '2';
+
+// Multi-group authorization model:
+//   - users/{uid}                : private to the user (read/write self only)
+//   - groups/{groupId}            : readable/writable by its memberIds
+//   - groupInvites/{inviteId}     : visible to inviter or invitee email
+//   - impressions / calendarEvents / goals / ... : per-document `groupId`,
+//       readable + writable by any member of that group, with author-only
+//       update/delete on the document.
+//
+// The user's `activeGroupId` is a *client-side filter*, not an authorization
+// boundary. Authorization is purely "are you in the document's group".
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ────────────────────────────────────────────────────────────────────────
     function signedIn() {
       return request.auth != null;
     }
 
-    function isUserDoc(uid) {
+    function isSelf(uid) {
       return signedIn() && request.auth.uid == uid;
     }
 
-    function userDoc(uid) {
-      return get(/databases/$(database)/documents/users/$(uid));
-    }
-
-    function userGroupId(uid) {
-      return userDoc(uid).data.activeGroupId;
-    }
-    
     function authEmailLower() {
-      return request.auth.token.email is string
-        ? request.auth.token.email.lower()
-        : '';
+      return request.auth != null &&
+        request.auth.token.email is string
+          ? request.auth.token.email.lower()
+          : '';
     }
 
-    function sameGroup(resourceData) {
+    function groupMemberIds(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+    }
+
+    function isMemberOfGroup(groupId) {
       return signedIn() &&
-        userDoc(request.auth.uid).exists() &&
-        userGroupId(request.auth.uid) != null &&
-        resourceData.groupId == userGroupId(request.auth.uid);
+        groupId is string &&
+        exists(/databases/$(database)/documents/groups/$(groupId)) &&
+        groupMemberIds(groupId).hasAny([request.auth.uid]);
     }
 
+    // ────────────────────────────────────────────────────────────────────────
+    // Users
+    // ────────────────────────────────────────────────────────────────────────
     match /users/{uid} {
-      allow read, delete: if isUserDoc(uid);
-      allow create: if isUserDoc(uid) &&
+      allow read, delete: if isSelf(uid);
+      allow create: if isSelf(uid) &&
         request.resource.data.uid == uid &&
         request.resource.data.email is string;
-      allow update: if isUserDoc(uid) &&
+      allow update: if isSelf(uid) &&
         request.resource.data.uid == uid &&
         request.resource.data.email == resource.data.email;
     }
 
+    // ────────────────────────────────────────────────────────────────────────
+    // Groups
+    // ────────────────────────────────────────────────────────────────────────
     match /groups/{groupId} {
-      allow read: if signedIn() && resource.data.memberIds.hasAny([request.auth.uid]);
+      allow read: if signedIn() &&
+        resource.data.memberIds.hasAny([request.auth.uid]);
+
       allow create: if signedIn() &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.memberIds.hasAny([request.auth.uid]);
-      allow update, delete: if signedIn() &&
-        (resource.data.createdBy == request.auth.uid ||
-          request.resource.data.memberIds.hasAny([request.auth.uid]));
+
+      // Existing members can update the group (e.g. add new members on invite
+      // accept). Only the creator can delete the group entirely.
+      allow update: if signedIn() &&
+        resource.data.memberIds.hasAny([request.auth.uid]);
+      allow delete: if signedIn() &&
+        resource.data.createdBy == request.auth.uid;
     }
 
+    // ────────────────────────────────────────────────────────────────────────
+    // Group Invites
+    // ────────────────────────────────────────────────────────────────────────
     match /groupInvites/{inviteId} {
-      allow read: if signedIn() &&
-        (resource.data.createdBy == request.auth.uid ||
-          resource.data.emailLower == authEmailLower());
+      allow read: if signedIn() && (
+        resource.data.createdBy == request.auth.uid ||
+        resource.data.emailLower == authEmailLower()
+      );
 
       allow create: if signedIn() &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.status == 'pending';
 
-      allow update: if signedIn() &&
-        (resource.data.createdBy == request.auth.uid ||
-          resource.data.emailLower == authEmailLower());
+      allow update: if signedIn() && (
+        resource.data.createdBy == request.auth.uid ||
+        resource.data.emailLower == authEmailLower()
+      );
 
-      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+      allow delete: if signedIn() &&
+        resource.data.createdBy == request.auth.uid;
     }
 
+    // ────────────────────────────────────────────────────────────────────────
+    // Feature collections (group-scoped)
+    // Read/write require membership in the document's group; mutations
+    // additionally require the author identity to match request.auth.uid.
+    // ────────────────────────────────────────────────────────────────────────
     match /impressions/{docId} {
-      allow read: if sameGroup(resource.data);
-      allow create: if sameGroup(request.resource.data) &&
+      allow read: if isMemberOfGroup(resource.data.groupId);
+
+      allow create: if isMemberOfGroup(request.resource.data.groupId) &&
         request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if sameGroup(resource.data) &&
+
+      allow update, delete: if isMemberOfGroup(resource.data.groupId) &&
         resource.data.authorId == request.auth.uid;
     }
 
     match /calendarEvents/{docId} {
-      allow read: if sameGroup(resource.data);
-      allow create: if sameGroup(request.resource.data) &&
+      allow read: if isMemberOfGroup(resource.data.groupId);
+
+      allow create: if isMemberOfGroup(request.resource.data.groupId) &&
         request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if sameGroup(resource.data) &&
+
+      allow update, delete: if isMemberOfGroup(resource.data.groupId) &&
         resource.data.authorId == request.auth.uid;
     }
 
     match /goals/{docId} {
-      allow read: if sameGroup(resource.data);
-      allow create: if sameGroup(request.resource.data) &&
+      allow read: if isMemberOfGroup(resource.data.groupId);
+
+      allow create: if isMemberOfGroup(request.resource.data.groupId) &&
         request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if sameGroup(resource.data) &&
+
+      allow update, delete: if isMemberOfGroup(resource.data.groupId) &&
         resource.data.authorId == request.auth.uid;
     }
   }

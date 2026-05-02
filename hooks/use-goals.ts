@@ -1,13 +1,19 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import type { CreateGoalInput, GoalPeriod, UpdateGoalStatusInput } from '@/types';
 import { useAuthContext } from '@/context/AuthContext';
 import { getConfiguredGoalsService } from '@/lib/goals';
+import { logAuthDiagnostics } from '@/lib/query/log-auth-diagnostics';
+import { logQueryError } from '@/lib/query/log-query-error';
 
 export const GOALS_KEY = ['goals'] as const;
 
 export function useGoals(period?: GoalPeriod) {
   const { user, provider } = useAuthContext();
-  return useQuery({
+  const canQuery = Boolean(user?.uid && user.activeGroupId);
+
+  const query = useQuery({
     queryKey: [
       ...GOALS_KEY,
       provider,
@@ -19,8 +25,24 @@ export function useGoals(period?: GoalPeriod) {
       if (!user) return [];
       return getConfiguredGoalsService(user).getGoals(user, period);
     },
-    enabled: Boolean(user),
+    enabled: canQuery,
   });
+
+  useEffect(() => {
+    if (query.error) {
+      const code = (query.error as { code?: string })?.code ?? 'unknown';
+      logQueryError(
+        'goals',
+        query.error,
+        `${provider}:${user?.uid ?? 'anon'}:${user?.activeGroupId ?? 'none'}:${period ?? 'all'}`
+      );
+      if (code === 'permission-denied') {
+        void logAuthDiagnostics(user ?? null);
+      }
+    }
+  }, [period, provider, query.error, user?.activeGroupId, user?.uid]);
+
+  return query;
 }
 
 export function useCreateGoal() {

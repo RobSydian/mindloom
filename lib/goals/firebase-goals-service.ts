@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
@@ -21,6 +20,7 @@ import type {
   UpdateGoalStatusInput,
 } from '@/types';
 import { getFirebaseDb } from '@/lib/firebase/firebaseConfig';
+import { normalizeDateLike } from '@/lib/firebase/normalize';
 import type { GoalsService } from './goals-service';
 
 type FirestoreGoal = Omit<Goal, 'id'> & { groupId: string };
@@ -34,15 +34,22 @@ export const firebaseGoalsService: GoalsService = {
   async getGoals(user, period?: GoalPeriod) {
     const db = getFirebaseDb();
     const groupId = requireGroup(user);
-    const base = [
-      where('groupId', '==', groupId),
-      orderBy('createdAt', 'desc'),
-    ] as const;
+    const base = [where('groupId', '==', groupId)] as const;
     const q = period
       ? query(collection(db, 'goals'), where('period', '==', period), ...base)
       : query(collection(db, 'goals'), ...base);
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Goal, 'id'>) }));
+    return snap.docs
+      .map((d) => {
+        const data = d.data() as Omit<Goal, 'id'>;
+        return {
+          id: d.id,
+          ...data,
+          createdAt: normalizeDateLike(data.createdAt),
+          updatedAt: normalizeDateLike(data.updatedAt),
+        };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
   async createGoal(user, data: CreateGoalInput) {

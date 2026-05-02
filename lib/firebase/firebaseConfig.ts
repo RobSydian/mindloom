@@ -72,8 +72,3 @@ export function getFirebaseDb(): Firestore {
   dbInstance = getFirestore(getFirebaseApp());
   return dbInstance;
 }
-
-// Convenience singleton exports (match the common firebaseConfig.js pattern)
-export const app = getFirebaseApp();
-export const auth = getFirebaseAuth();
-export const db = getFirebaseDb();

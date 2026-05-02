@@ -11,6 +11,7 @@ import {
 import { Screen } from '@/components/layout/Screen';
 import { EventItem } from '@/components/features/calendar/EventItem';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { t } from '@/constants/i18n';
 import { Colors, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCalendarEvents } from '@/hooks/use-calendar';
@@ -36,7 +37,7 @@ export default function CalendarScreen() {
       <Screen>
         <View style={styles.center}>
           <Text style={[styles.errorText, { color: c.destructive }]}>
-            Could not load events.
+            {t('calendar.error.load')}
           </Text>
         </View>
       </Screen>
@@ -46,9 +47,9 @@ export default function CalendarScreen() {
   return (
     <Screen edges={['top']}>
       <View style={[styles.pageHeader, { backgroundColor: c.background }]}>
-        <Text style={[styles.pageTitle, { color: c.text }]}>Calendar</Text>
+        <Text style={[styles.pageTitle, { color: c.text }]}>{t('calendar.title')}</Text>
         <Text style={[styles.pageSubtitle, { color: c.textSecondary }]}>
-          {data?.length ?? 0} events
+          {t('calendar.subtitle.count', { count: data?.length ?? 0 })}
         </Text>
       </View>
 
@@ -67,9 +68,9 @@ export default function CalendarScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <IconSymbol name="calendar" size={48} color={c.muted} />
-            <Text style={[styles.emptyTitle, { color: c.text }]}>No events yet</Text>
+            <Text style={[styles.emptyTitle, { color: c.text }]}>{t('calendar.empty.title')}</Text>
             <Text style={[styles.emptySubtitle, { color: c.textSecondary }]}>
-              Tap + to add your first event.
+              {t('calendar.empty.subtitle')}
             </Text>
           </View>
         }

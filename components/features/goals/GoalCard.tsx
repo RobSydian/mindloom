@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
+import { t } from '@/constants/i18n';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { GOAL_PERIOD_LABELS, type Goal } from '@/types';
@@ -34,7 +35,7 @@ export function GoalCard({ goal, style }: GoalCardProps) {
       ) : null}
       {goal.statusReason ? (
         <View style={[styles.reasonRow, { backgroundColor: c.muted }]}>
-          <Text style={[styles.reasonLabel, { color: c.textSecondary }]}>Reason: </Text>
+          <Text style={[styles.reasonLabel, { color: c.textSecondary }]}>{t('goals.reason')}</Text>
           <Text style={[styles.reasonText, { color: c.text }]} numberOfLines={2}>
             {goal.statusReason}
           </Text>

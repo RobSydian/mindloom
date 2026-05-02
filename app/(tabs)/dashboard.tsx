@@ -15,6 +15,7 @@ import { StatCard } from '@/components/features/dashboard/StatCard';
 import { GoalSummaryRow } from '@/components/features/dashboard/GoalSummaryRow';
 import { ImpressionCard } from '@/components/features/impressions/ImpressionCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { t } from '@/constants/i18n';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 import { useAuthContext } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -25,13 +26,21 @@ const STATUS_ORDER: GoalStatus[] = ['pending', 'in_progress', 'finished', 'block
 
 function getGreeting(): string {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return t('dashboard.greeting.morning');
+  if (h < 18) return t('dashboard.greeting.afternoon');
+  return t('dashboard.greeting.evening');
 }
 
 function formatAvgRating(avg: number): string {
   return avg.toFixed(1);
+}
+
+function chartStatusLabel(status: GoalStatus): string {
+  if (status === 'in_progress') return t('dashboard.status.active');
+  if (status === 'pending') return t('dashboard.status.pending');
+  if (status === 'finished') return t('dashboard.status.finished');
+  if (status === 'blocked') return t('dashboard.status.blocked');
+  return t('dashboard.status.cancelled');
 }
 
 export default function DashboardScreen() {
@@ -55,7 +64,7 @@ export default function DashboardScreen() {
       <Screen>
         <View style={styles.center}>
           <Text style={[styles.errorText, { color: c.destructive }]}>
-            Could not load dashboard.
+            {t('dashboard.error.load')}
           </Text>
         </View>
       </Screen>
@@ -64,7 +73,7 @@ export default function DashboardScreen() {
 
   const chartData = STATUS_ORDER.map((status) => ({
     value: summary.goalsByStatus[status] ?? 0,
-    label: status === 'in_progress' ? 'Active' : status.charAt(0).toUpperCase() + status.slice(1, 4),
+    label: chartStatusLabel(status),
     frontColor: c.primary,
   })).filter((d) => d.value > 0);
 
@@ -81,39 +90,39 @@ export default function DashboardScreen() {
               {getGreeting()},
             </Text>
             <Text style={[styles.name, { color: c.text }]}>
-              {user?.displayName ?? 'there'} 👋
+              {user?.displayName ?? t('dashboard.greeting.fallbackName')} 👋
             </Text>
           </View>
           <Avatar name={user?.displayName} uri={user?.photoURL} size="md" />
         </View>
 
         {/* Stat Cards */}
-        <Section title="Overview" style={styles.section}>
+        <Section title={t('dashboard.overview')} style={styles.section}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.statRow}
           >
             <StatCard
-              label="Impressions"
+              label={t('dashboard.stats.impressions')}
               value={summary.totalImpressions}
               accent={c.primary}
               icon={<IconSymbol name="photo.stack.fill" size={18} color={c.primary} />}
             />
             <StatCard
-              label="Avg Rating"
+              label={t('dashboard.stats.avgRating')}
               value={`${formatAvgRating(summary.avgRating)} ★`}
               accent={c.starFilled}
               icon={<IconSymbol name="star.fill" size={18} color={c.starFilled} />}
             />
             <StatCard
-              label="Upcoming"
+              label={t('dashboard.stats.upcoming')}
               value={summary.upcomingEventsCount}
               accent={c.info}
               icon={<IconSymbol name="calendar" size={18} color={c.info} />}
             />
             <StatCard
-              label="Goals"
+              label={t('dashboard.stats.goals')}
               value={Object.values(summary.goalsByStatus).reduce((a, b) => a + b, 0)}
               accent={c.success}
               icon={<IconSymbol name="checkmark.circle.fill" size={18} color={c.success} />}
@@ -123,7 +132,7 @@ export default function DashboardScreen() {
 
         {/* Goals chart */}
         {chartData.length > 0 && (
-          <Section title="Goals by Status" style={styles.section}>
+          <Section title={t('dashboard.goalsByStatus')} style={styles.section}>
             <View style={[styles.chartCard, { backgroundColor: c.surface, borderColor: c.border }]}>
               <BarChart
                 data={chartData}
@@ -147,14 +156,14 @@ export default function DashboardScreen() {
 
         {/* Goal status summary */}
         {Object.keys(summary.goalsByStatus).length > 0 && (
-          <Section title="Goal Statuses" style={styles.section}>
+          <Section title={t('dashboard.goalStatuses')} style={styles.section}>
             <GoalSummaryRow goalsByStatus={summary.goalsByStatus} />
           </Section>
         )}
 
         {/* Recent Impressions */}
         {summary.recentImpressions.length > 0 && (
-          <Section title="Recent Impressions" style={styles.section}>
+          <Section title={t('dashboard.recentImpressions')} style={styles.section}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -169,7 +178,7 @@ export default function DashboardScreen() {
 
         {/* Upcoming Events */}
         {summary.upcomingEvents.length > 0 && (
-          <Section title="Coming Up" style={styles.section}>
+          <Section title={t('dashboard.comingUp')} style={styles.section}>
             {summary.upcomingEvents.map((evt) => (
               <View
                 key={evt.id}
@@ -180,7 +189,7 @@ export default function DashboardScreen() {
                     {new Date(evt.date + 'T00:00:00').getDate()}
                   </Text>
                   <Text style={[styles.eventDateMonth, { color: c.accentForeground }]}>
-                    {new Date(evt.date + 'T00:00:00').toLocaleString('en-US', { month: 'short' })}
+                    {new Date(evt.date + 'T00:00:00').toLocaleString(undefined, { month: 'short' })}
                   </Text>
                 </View>
                 <View style={styles.eventBody}>
@@ -192,7 +201,9 @@ export default function DashboardScreen() {
                       {evt.time}
                     </Text>
                   ) : (
-                    <Text style={[styles.eventTime, { color: c.textSecondary }]}>All day</Text>
+                    <Text style={[styles.eventTime, { color: c.textSecondary }]}>
+                      {t('dashboard.allDay')}
+                    </Text>
                   )}
                 </View>
               </View>

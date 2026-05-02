@@ -16,20 +16,24 @@ export function useDashboard(): {
   const goals = useGoals();
 
   const isLoading = impressions.isLoading || events.isLoading || goals.isLoading;
-  const isError = impressions.isError || events.isError || goals.isError;
+  const isError = impressions.isError && events.isError && goals.isError;
 
   const summary = useMemo<DashboardSummary | null>(() => {
-    if (!impressions.data || !events.data || !goals.data) return null;
+    if (isLoading) return null;
 
-    const totalImpressions = impressions.data.length;
+    const impressionItems = impressions.data ?? [];
+    const eventItems = events.data ?? [];
+    const goalItems = goals.data ?? [];
+
+    const totalImpressions = impressionItems.length;
     const avgRating =
       totalImpressions > 0
-        ? impressions.data.reduce((sum, i) => sum + i.rating, 0) / totalImpressions
+        ? impressionItems.reduce((sum, i) => sum + i.rating, 0) / totalImpressions
         : 0;
 
-    const upcomingEvents = events.data.filter((e) => e.date >= TODAY).slice(0, 5);
+    const upcomingEvents = eventItems.filter((e) => e.date >= TODAY).slice(0, 5);
 
-    const goalsByStatus = goals.data.reduce(
+    const goalsByStatus = goalItems.reduce(
       (acc, g) => {
         acc[g.status] = (acc[g.status] ?? 0) + 1;
         return acc;
@@ -37,7 +41,7 @@ export function useDashboard(): {
       {} as Record<GoalStatus, number>
     );
 
-    const recentImpressions = impressions.data.slice(0, 5);
+    const recentImpressions = impressionItems.slice(0, 5);
 
     return {
       totalImpressions,
@@ -47,7 +51,7 @@ export function useDashboard(): {
       recentImpressions,
       upcomingEvents,
     };
-  }, [impressions.data, events.data, goals.data]);
+  }, [isLoading, impressions.data, events.data, goals.data]);
 
   return { summary, isLoading, isError };
 }

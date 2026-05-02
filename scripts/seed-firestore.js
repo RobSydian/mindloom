@@ -19,10 +19,91 @@ function requireArg(flag, helpText) {
   return value;
 }
 
+function hasFlag(flag) {
+  return process.argv.includes(flag);
+}
+
 function toDate(value) {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function validateSeedReferences(seed) {
+  const knownUserUids = new Set((seed.users ?? []).map((u) => u.uid));
+  const errors = [];
+
+  const ensureKnownUid = (uid, label) => {
+    if (!uid) return;
+    if (!knownUserUids.has(uid)) {
+      errors.push(`${label} references unknown uid "${uid}" (not found in seed.users[])`);
+    }
+  };
+
+  for (const g of seed.groups ?? []) {
+    ensureKnownUid(g.createdBy, `groups/${g.id}.createdBy`);
+    for (const uid of g.memberIds ?? []) {
+      ensureKnownUid(uid, `groups/${g.id}.memberIds[]`);
+    }
+  }
+
+  for (const i of seed.groupInvites ?? []) {
+    ensureKnownUid(i.createdBy, `groupInvites/${i.id}.createdBy`);
+    ensureKnownUid(i.acceptedBy, `groupInvites/${i.id}.acceptedBy`);
+  }
+
+  for (const imp of seed.impressions ?? []) {
+    ensureKnownUid(imp.authorId, `impressions/${imp.id}.authorId`);
+  }
+
+  for (const e of seed.calendarEvents ?? []) {
+    ensureKnownUid(e.authorId, `calendarEvents/${e.id}.authorId`);
+  }
+
+  for (const g of seed.goals ?? []) {
+    ensureKnownUid(g.authorId, `goals/${g.id}.authorId`);
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Seed consistency validation failed:\n- ${errors.join('\n- ')}`);
+  }
+}
+
+async function resolveSeedUsers(auth, users, strictAuthUsers) {
+  const resolvedUsers = [];
+  const uidMap = new Map();
+
+  for (const u of users ?? []) {
+    const originalUid = u.uid;
+    let resolvedUid = u.uid;
+    let resolution = 'seed-uid';
+
+    if (u.email) {
+      try {
+        const authUser = await auth.getUserByEmail(String(u.email).toLowerCase());
+        resolvedUid = authUser.uid;
+        resolution = 'auth-email';
+      } catch (error) {
+        if (strictAuthUsers) {
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to resolve Firebase Auth user by email "${u.email}": ${message}`);
+        }
+        console.warn(
+          `[seed] Could not resolve "${u.email}" in Firebase Auth. Falling back to seed uid "${u.uid}".`
+        );
+      }
+    }
+
+    uidMap.set(originalUid, resolvedUid);
+    resolvedUsers.push({
+      ...u,
+      uid: resolvedUid,
+      __originalUid: originalUid,
+      __resolution: resolution,
+    });
+  }
+
+  return { resolvedUsers, uidMap };
 }
 
 async function run() {
@@ -34,6 +115,7 @@ async function run() {
     '--seed',
     path.join(process.cwd(), 'firebase', 'seed.multi-group.payload.json')
   );
+  const strictAuthUsers = !hasFlag('--allow-missing-auth-users');
 
   const resolvedKeyPath = path.resolve(keyPath);
   const resolvedSeedPath = path.resolve(seedPath);
@@ -47,22 +129,42 @@ async function run() {
 
   const serviceAccount = JSON.parse(fs.readFileSync(resolvedKeyPath, 'utf8'));
   const seed = JSON.parse(fs.readFileSync(resolvedSeedPath, 'utf8'));
+  validateSeedReferences(seed);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
+  const auth = admin.auth();
   const db = admin.firestore();
   const { FieldValue, Timestamp } = admin.firestore;
 
   console.log(`Seeding Firestore using: ${resolvedSeedPath}`);
+  console.log(
+    `[seed] UID resolution mode: ${
+      strictAuthUsers
+        ? 'strict (fail if seed user email is missing in Firebase Auth)'
+        : 'lenient (fallback to seed uid when email is missing in Firebase Auth; use only for local test data)'
+    }`
+  );
+
+  const { resolvedUsers, uidMap } = await resolveSeedUsers(auth, seed.users ?? [], strictAuthUsers);
+  const mapUid = (uid) => (uid ? uidMap.get(uid) ?? uid : uid);
+
+  for (const u of resolvedUsers) {
+    if (u.__originalUid !== u.uid) {
+      console.log(`[seed] remapped ${u.email}: ${u.__originalUid} -> ${u.uid}`);
+    } else {
+      console.log(`[seed] using uid for ${u.email}: ${u.uid} (${u.__resolution})`);
+    }
+  }
 
   // groups
   for (const g of seed.groups ?? []) {
     await db.collection('groups').doc(g.id).set(
       {
         name: g.name,
-        createdBy: g.createdBy,
-        memberIds: g.memberIds,
+        createdBy: mapUid(g.createdBy),
+        memberIds: (g.memberIds ?? []).map(mapUid),
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
@@ -72,7 +174,7 @@ async function run() {
   }
 
   // users
-  for (const u of seed.users ?? []) {
+  for (const u of resolvedUsers) {
     await db.collection('users').doc(u.uid).set(
       {
         uid: u.uid,
@@ -102,9 +204,9 @@ async function run() {
         status: i.status ?? 'pending',
         tokenHash: i.tokenHash,
         expiresAt: expiresAtDate ? Timestamp.fromDate(expiresAtDate) : null,
-        createdBy: i.createdBy,
+        createdBy: mapUid(i.createdBy),
         createdAt: FieldValue.serverTimestamp(),
-        acceptedBy: i.acceptedBy ?? null,
+        acceptedBy: i.acceptedBy ? mapUid(i.acceptedBy) : null,
         acceptedAt: acceptedAtDate ? Timestamp.fromDate(acceptedAtDate) : null,
       },
       { merge: true }
@@ -116,7 +218,7 @@ async function run() {
   for (const imp of seed.impressions ?? []) {
     await db.collection('impressions').doc(imp.id).set(
       {
-        authorId: imp.authorId,
+        authorId: mapUid(imp.authorId),
         groupId: imp.groupId,
         placeName: imp.placeName,
         description: imp.description ?? '',
@@ -135,7 +237,7 @@ async function run() {
   for (const e of seed.calendarEvents ?? []) {
     await db.collection('calendarEvents').doc(e.id).set(
       {
-        authorId: e.authorId,
+        authorId: mapUid(e.authorId),
         groupId: e.groupId,
         title: e.title,
         description: e.description ?? '',
@@ -153,7 +255,7 @@ async function run() {
   for (const g of seed.goals ?? []) {
     await db.collection('goals').doc(g.id).set(
       {
-        authorId: g.authorId,
+        authorId: mapUid(g.authorId),
         groupId: g.groupId,
         title: g.title,
         description: g.description ?? '',

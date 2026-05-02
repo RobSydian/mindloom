@@ -5,13 +5,13 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   serverTimestamp,
   where,
 } from 'firebase/firestore';
 import type { AppUser, CalendarEvent, CreateCalendarEventInput } from '@/types';
 import { getFirebaseDb } from '@/lib/firebase/firebaseConfig';
+import { normalizeDateLike } from '@/lib/firebase/normalize';
 import type { CalendarService } from './calendar-service';
 
 type FirestoreCalendarEvent = Omit<CalendarEvent, 'id'> & { groupId: string; updatedAt: string };
@@ -25,13 +25,19 @@ export const firebaseCalendarService: CalendarService = {
   async getEvents(user) {
     const db = getFirebaseDb();
     const groupId = requireGroup(user);
-    const q = query(
-      collection(db, 'calendarEvents'),
-      where('groupId', '==', groupId),
-      orderBy('date', 'asc')
-    );
+    const q = query(collection(db, 'calendarEvents'), where('groupId', '==', groupId));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<CalendarEvent, 'id'>) }));
+    return snap.docs
+      .map((d) => {
+        const data = d.data() as Omit<CalendarEvent, 'id'>;
+        return {
+          id: d.id,
+          ...data,
+          date: normalizeDateLike(data.date).slice(0, 10),
+          createdAt: normalizeDateLike(data.createdAt),
+        };
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
   },
 
   async createEvent(user, data) {

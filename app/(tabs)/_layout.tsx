@@ -2,8 +2,8 @@ import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 
-import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { t } from '@/constants/i18n';
 import { useAuthContext } from '@/context/AuthContext';
 import { Colors, ComponentTokens, Typography } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -29,7 +29,6 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarButton: HapticTab,
         tabBarActiveTintColor: c.tabActive,
         tabBarInactiveTintColor: c.tabInactive,
         tabBarStyle: {
@@ -47,7 +46,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Dashboard',
+          title: t('tabs.dashboard'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={ComponentTokens.tab.iconSize} name="square.grid.2x2.fill" color={color} />
           ),
@@ -56,7 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="impressions"
         options={{
-          title: 'Impressions',
+          title: t('tabs.impressions'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={ComponentTokens.tab.iconSize} name="photo.stack.fill" color={color} />
           ),
@@ -65,7 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Calendar',
+          title: t('tabs.calendar'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={ComponentTokens.tab.iconSize} name="calendar" color={color} />
           ),
@@ -74,7 +73,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="goals"
         options={{
-          title: 'Goals',
+          title: t('tabs.goals'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={ComponentTokens.tab.iconSize} name="checkmark.circle.fill" color={color} />
           ),
@@ -83,7 +82,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={ComponentTokens.tab.iconSize} name="person.fill" color={color} />
           ),

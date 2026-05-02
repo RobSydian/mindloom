@@ -11,15 +11,16 @@ import {
 import { Screen } from '@/components/layout/Screen';
 import { GoalCard } from '@/components/features/goals/GoalCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { t } from '@/constants/i18n';
 import { Colors, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useGoals } from '@/hooks/use-goals';
 import type { Goal, GoalPeriod } from '@/types';
 
-const FILTER_OPTIONS: { label: string; value: GoalPeriod | 'all' }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Weekly', value: 'weekly' },
-  { label: 'Monthly', value: 'monthly' },
+const FILTER_OPTIONS: { key: 'goals.filter.all' | 'goals.filter.weekly' | 'goals.filter.monthly'; value: GoalPeriod | 'all' }[] = [
+  { key: 'goals.filter.all', value: 'all' },
+  { key: 'goals.filter.weekly', value: 'weekly' },
+  { key: 'goals.filter.monthly', value: 'monthly' },
 ];
 
 export default function GoalsScreen() {
@@ -43,7 +44,7 @@ export default function GoalsScreen() {
       <Screen>
         <View style={styles.center}>
           <Text style={[styles.errorText, { color: c.destructive }]}>
-            Could not load goals.
+            {t('goals.error.load')}
           </Text>
         </View>
       </Screen>
@@ -53,9 +54,9 @@ export default function GoalsScreen() {
   return (
     <Screen edges={['top']}>
       <View style={[styles.pageHeader, { backgroundColor: c.background }]}>
-        <Text style={[styles.pageTitle, { color: c.text }]}>Goals</Text>
+        <Text style={[styles.pageTitle, { color: c.text }]}>{t('goals.title')}</Text>
         <Text style={[styles.pageSubtitle, { color: c.textSecondary }]}>
-          {data?.length ?? 0} goals
+          {t('goals.subtitle.count', { count: data?.length ?? 0 })}
         </Text>
       </View>
 
@@ -82,7 +83,7 @@ export default function GoalsScreen() {
                   { color: active ? c.primaryForeground : c.textSecondary },
                 ]}
               >
-                {opt.label}
+                {t(opt.key)}
               </Text>
             </TouchableOpacity>
           );
@@ -102,9 +103,9 @@ export default function GoalsScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <IconSymbol name="checkmark.circle.fill" size={48} color={c.muted} />
-            <Text style={[styles.emptyTitle, { color: c.text }]}>No goals yet</Text>
+            <Text style={[styles.emptyTitle, { color: c.text }]}>{t('goals.empty.title')}</Text>
             <Text style={[styles.emptySubtitle, { color: c.textSecondary }]}>
-              Tap + to set your first goal.
+              {t('goals.empty.subtitle')}
             </Text>
           </View>
         }

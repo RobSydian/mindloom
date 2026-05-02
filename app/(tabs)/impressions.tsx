@@ -11,6 +11,7 @@ import {
 import { Screen } from '@/components/layout/Screen';
 import { ImpressionCard } from '@/components/features/impressions/ImpressionCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { t } from '@/constants/i18n';
 import { Colors, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useImpressions } from '@/hooks/use-impressions';
@@ -36,10 +37,10 @@ export default function ImpressionsScreen() {
       <Screen>
         <View style={styles.center}>
           <Text style={[styles.errorText, { color: c.destructive }]}>
-            Could not load impressions.
+            {t('impressions.error.load')}
           </Text>
           <TouchableOpacity onPress={() => refetch()} style={styles.retryBtn}>
-            <Text style={[styles.retryText, { color: c.primary }]}>Try again</Text>
+            <Text style={[styles.retryText, { color: c.primary }]}>{t('common.tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       </Screen>
@@ -49,9 +50,9 @@ export default function ImpressionsScreen() {
   return (
     <Screen edges={['top']}>
       <View style={[styles.pageHeader, { backgroundColor: c.background }]}>
-        <Text style={[styles.pageTitle, { color: c.text }]}>Impressions</Text>
+        <Text style={[styles.pageTitle, { color: c.text }]}>{t('impressions.title')}</Text>
         <Text style={[styles.pageSubtitle, { color: c.textSecondary }]}>
-          {data?.length ?? 0} places logged
+          {t('impressions.subtitle.count', { count: data?.length ?? 0 })}
         </Text>
       </View>
 
@@ -70,9 +71,9 @@ export default function ImpressionsScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <IconSymbol name="photo.stack.fill" size={48} color={c.muted} />
-            <Text style={[styles.emptyTitle, { color: c.text }]}>No impressions yet</Text>
+            <Text style={[styles.emptyTitle, { color: c.text }]}>{t('impressions.empty.title')}</Text>
             <Text style={[styles.emptySubtitle, { color: c.textSecondary }]}>
-              Tap + to log your first place.
+              {t('impressions.empty.subtitle')}
             </Text>
           </View>
         }

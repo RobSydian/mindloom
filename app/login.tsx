@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const c = Colors[scheme];
   const styles = makeStyles(c);
 
-  const { signIn } = useAuthContext();
+  const { signIn, signOut, user } = useAuthContext();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,12 +41,21 @@ export default function LoginScreen() {
     setError(null);
     setIsLoading(true);
     try {
-      await signIn(email.trim(), password);
+      await signIn(email.trim().toLowerCase(), password);
       router.replace('/(tabs)/dashboard');
     } catch (e: unknown) {
       setError(t(getAuthErrorKey(e)));
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleClearSession() {
+    setError(null);
+    try {
+      await signOut();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to sign out.');
     }
   }
 
@@ -148,6 +157,14 @@ export default function LoginScreen() {
             >
               <Text style={styles.demoText}>{t('login.forgotPassword')}</Text>
             </TouchableOpacity>
+
+            {user ? (
+              <TouchableOpacity onPress={handleClearSession} style={styles.demoRow}>
+                <Text style={[styles.demoText, { opacity: 0.7 }]}>
+                  {t('login.signOutCurrent', { email: user.email || user.displayName })}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

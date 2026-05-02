@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   serverTimestamp,
   where,
@@ -13,6 +12,7 @@ import {
 
 import type { AppUser, CreateImpressionInput, Impression } from '@/types';
 import { getFirebaseDb } from '@/lib/firebase/firebaseConfig';
+import { normalizeDateLike } from '@/lib/firebase/normalize';
 import type { ImpressionsService } from './impressions-service';
 
 type FirestoreImpression = Omit<Impression, 'id'> & { groupId: string };
@@ -35,8 +35,8 @@ function mapDocToImpression(id: string, data: FirestoreImpression): Impression {
     rating: data.rating,
     images: data.images ?? [],
     location: data.location ?? null,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
+    createdAt: normalizeDateLike(data.createdAt),
+    updatedAt: normalizeDateLike(data.updatedAt),
   };
 }
 
@@ -45,15 +45,11 @@ export const firebaseImpressionsService: ImpressionsService = {
     const db = getFirebaseDb();
     const groupId = assertGroupId(user);
     const impressionsRef = collection(db, 'impressions');
-    const q = query(
-      impressionsRef,
-      where('groupId', '==', groupId),
-      orderBy('createdAt', 'desc')
-    );
+    const q = query(impressionsRef, where('groupId', '==', groupId));
     const snap = await getDocs(q);
-    return snap.docs.map((d) =>
-      mapDocToImpression(d.id, d.data() as FirestoreImpression)
-    );
+    return snap.docs
+      .map((d) => mapDocToImpression(d.id, d.data() as FirestoreImpression))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
   async createImpression(user, data) {

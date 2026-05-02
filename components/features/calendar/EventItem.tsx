@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
+import { t } from '@/constants/i18n';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import type { CalendarEvent } from '@/types';
@@ -14,8 +15,8 @@ function formatDate(dateStr: string): { day: string; month: string; weekday: str
   const d = new Date(dateStr + 'T00:00:00');
   return {
     day: d.getDate().toString(),
-    month: d.toLocaleString('en-US', { month: 'short' }),
-    weekday: d.toLocaleString('en-US', { weekday: 'short' }),
+    month: d.toLocaleString(undefined, { month: 'short' }),
+    weekday: d.toLocaleString(undefined, { weekday: 'short' }),
   };
 }
 
@@ -64,7 +65,7 @@ export function EventItem({ event, style }: EventItemProps) {
           </Text>
         ) : null}
         <Text style={[styles.time, { color: c.textSecondary }]}>
-          {event.time ?? 'All day'}
+          {event.time ?? t('common.allDay')}
         </Text>
       </View>
     </View>

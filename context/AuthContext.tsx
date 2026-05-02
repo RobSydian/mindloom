@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+
 import type { AppUser, AuthProvider } from '@/types';
 import { getConfiguredAuthService } from '@/lib/auth';
 
@@ -19,48 +20,47 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [provider, setProvider] = useState<AuthProvider>('mock');
-  const [providerReason, setProviderReason] = useState('Not initialized yet.');
+
+  // Resolve the auth service once. Re-resolving on every callback caused redundant
+  // Firebase init work and complicated reasoning about lifecycle ordering.
+  const configured = useMemo(() => getConfiguredAuthService(), []);
 
   useEffect(() => {
-    const configured = getConfiguredAuthService();
-    setProvider(configured.provider);
-    setProviderReason(configured.reason);
+    console.info(`[auth] provider=${configured.provider} reason=${configured.reason}`);
 
-    configured.service
-      .getSession()
-      .then(setUser)
-      .finally(() => setIsLoading(false));
+    let isMounted = true;
+    const unsubscribe = configured.service.subscribe((nextUser) => {
+      if (!isMounted) return;
+      setUser(nextUser);
+      setIsLoading(false);
+    });
 
-    const unsubscribe = configured.service.subscribe(setUser);
-    return unsubscribe;
-  }, []);
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [configured]);
 
   async function signIn(email: string, password: string) {
-    const configured = getConfiguredAuthService();
     const authedUser = await configured.service.signIn(email, password);
     setUser(authedUser);
   }
 
-  async function signOut() {
-    const configured = getConfiguredAuthService();
-    await configured.service.signOut();
-    setUser(null);
-  }
-
   async function register(email: string, password: string, displayName: string) {
-    const configured = getConfiguredAuthService();
     const authedUser = await configured.service.register(email, password, displayName);
     setUser(authedUser);
   }
 
+  async function signOut() {
+    await configured.service.signOut();
+    setUser(null);
+  }
+
   async function sendPasswordReset(email: string) {
-    const configured = getConfiguredAuthService();
     await configured.service.sendPasswordReset(email);
   }
 
   async function refreshUser() {
-    const configured = getConfiguredAuthService();
     const session = await configured.service.getSession();
     setUser(session);
   }
@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
-        provider,
-        providerReason,
+        provider: configured.provider,
+        providerReason: configured.reason,
         signIn,
         register,
         sendPasswordReset,
