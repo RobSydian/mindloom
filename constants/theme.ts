@@ -1,9 +1,21 @@
 import { Platform } from 'react-native';
 
+// ─── Brand palette (canonical hex — use for illustrations, logos, accents) ───
+/** App-wide brand colors. Prefer `Colors[scheme].*` for UI chrome; use this when you need the exact brand ramp. */
+export const BrandPalette = {
+  primary: '#033F63',
+  secondary: '#28666E',
+  tertiary: '#7C9885',
+  complementary: '#B5B682',
+  complementarySoft: '#FEDC97',
+} as const;
+
+export type BrandPaletteKey = keyof typeof BrandPalette;
+
 // ─── Raw Palette ─────────────────────────────────────────────────────────────
 // Never reference these directly in components. Use semantic tokens instead.
 const Palette = {
-  // Brand
+  // Brand (legacy accents — prefer BrandPalette + semantic Colors)
   violet50: '#f5f3ff',
   violet100: '#ede9fe',
   violet200: '#ddd6fe',
@@ -67,16 +79,16 @@ export const Colors = {
     surfaceRaised: Palette.white,
 
     // Brand
-    primary: Palette.violet600,
+    primary: BrandPalette.primary,
     primaryForeground: Palette.white,
-    secondary: Palette.violet50,
-    secondaryForeground: Palette.violet700,
+    secondary: '#e8f1f4',
+    secondaryForeground: BrandPalette.secondary,
 
     // Neutral UI
     muted: Palette.gray100,
     mutedForeground: Palette.gray500,
-    accent: Palette.violet100,
-    accentForeground: Palette.violet700,
+    accent: '#e8efe9',
+    accentForeground: BrandPalette.secondary,
 
     // Typography
     text: Palette.gray900,
@@ -105,8 +117,8 @@ export const Colors = {
     shadow: Palette.black,
 
     // Navigation / Tabs
-    tint: Palette.violet600,
-    tabActive: Palette.violet600,
+    tint: BrandPalette.primary,
+    tabActive: BrandPalette.primary,
     tabInactive: Palette.gray400,
     tabBackground: Palette.white,
 
@@ -122,16 +134,16 @@ export const Colors = {
     surfaceRaised: Palette.dark700,
 
     // Brand
-    primary: Palette.violet400,
-    primaryForeground: Palette.dark900,
+    primary: BrandPalette.secondary,
+    primaryForeground: Palette.white,
     secondary: Palette.dark600,
-    secondaryForeground: Palette.violet200,
+    secondaryForeground: BrandPalette.tertiary,
 
     // Neutral UI
     muted: Palette.dark700,
     mutedForeground: Palette.dark300,
     accent: Palette.dark500,
-    accentForeground: Palette.violet200,
+    accentForeground: BrandPalette.complementarySoft,
 
     // Typography
     text: Palette.gray50,
@@ -160,8 +172,8 @@ export const Colors = {
     shadow: Palette.black,
 
     // Navigation / Tabs
-    tint: Palette.violet400,
-    tabActive: Palette.violet400,
+    tint: BrandPalette.secondary,
+    tabActive: BrandPalette.secondary,
     tabInactive: Palette.dark300,
     tabBackground: Palette.dark800,
 

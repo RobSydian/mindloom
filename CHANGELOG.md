@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- App-wide `BrandPalette` (primary, secondary, tertiary, complementary, complementarySoft) exported from `constants/theme.ts` for shared brand colors.
 - Firebase-backed login and registration with routing gate (dashboard vs Loom onboarding).
 - Loom (group) onboarding: create Loom, request join by Loom ID with creator approval, “My Looms” and Enter, invite-by-email; optional seed support for `groups/{id}/joinRequests`.
 - Join-request subcollection and Firestore rules updates for membership and invites.
@@ -17,6 +18,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- Semantic theme tokens (`Colors.light` / `Colors.dark`): primary, tint, tabs, and related secondary/accent surfaces aligned with the new brand ramp (dark mode primary uses secondary teal for contrast).
 - Firestore schema documentation (`firebase/firestore.schema.json`) for `joinRequests` and `sharedGroupId`.
 - Invite mailto copy to reference Looms.
 - `seed-firestore.js`: optional `joinRequests` seeding; clarified payload vs schema docs.
