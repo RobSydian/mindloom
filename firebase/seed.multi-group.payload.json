@@ -62,6 +62,13 @@
       "acceptedAt": "2026-01-01T12:00:00.000Z"
     }
   ],
+  "joinRequests": [
+    {
+      "groupId": "group_01",
+      "requesterUid": "ZBiIhCX3oAdrUoUAXWgqA0HqDci2",
+      "status": "pending"
+    }
+  ],
   "impressions": [
     {
       "id": "imp_g1_user1_01",

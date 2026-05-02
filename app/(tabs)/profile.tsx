@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { t } from '@/constants/i18n';
 import { Screen } from '@/components/layout/Screen';
@@ -25,7 +26,8 @@ import { useImpressions } from '@/hooks/use-impressions';
 import { useGoals } from '@/hooks/use-goals';
 import { useCalendarEvents } from '@/hooks/use-calendar';
 import { createGroupInvite } from '@/lib/invites/invite-service';
-import { useGroups } from '@/hooks/use-groups';
+import { leaveLoom } from '@/lib/groups/group-service';
+import { GROUPS_KEY, useGroups } from '@/hooks/use-groups';
 import { setActiveGroupId } from '@/lib/users/user-service';
 import { getAppLanguage, setAppLanguage } from '@/lib/i18n';
 import type { SupportedLanguage } from '@/lib/i18n/resources';
@@ -33,6 +35,7 @@ import type { SupportedLanguage } from '@/lib/i18n/resources';
 export default function ProfileScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  const queryClient = useQueryClient();
   const { user, signOut, refreshUser } = useAuthContext();
   const [inviteEmail, setInviteEmail] = React.useState('');
   const [inviteMessage, setInviteMessage] = React.useState<string | null>(null);
@@ -94,6 +97,39 @@ export default function ProfileScreen() {
     setSelectedLanguage(lang);
     setInviteMessage(t('profile.language.updated', { lang: lang.toUpperCase() }));
   }
+
+  function handleLeaveLoom() {
+    if (!user?.activeGroupId || !groups) return;
+    const g = groups.find((x) => x.id === user.activeGroupId);
+    if (!g || g.createdBy === user.uid) return;
+    Alert.alert(t('profile.group.leaveConfirmTitle'), t('profile.group.leaveConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('profile.group.leaveLoom'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await leaveLoom(user.uid, g.id);
+            await queryClient.invalidateQueries({ queryKey: GROUPS_KEY });
+            await refreshUser();
+            setInviteMessage(t('profile.group.leaveDone'));
+          } catch (e: unknown) {
+            const msg =
+              e instanceof Error && e.message === 'CREATOR_CANNOT_LEAVE'
+                ? t('profile.group.creatorCannotLeave')
+                : e instanceof Error
+                  ? e.message
+                  : t('profile.group.leaveFailed');
+            setInviteMessage(msg);
+          }
+        },
+      },
+    ]);
+  }
+
+  const activeLoom = groups?.find((x) => x.id === user?.activeGroupId);
+  const showLeaveLoom =
+    Boolean(user?.activeGroupId) && Boolean(activeLoom && activeLoom.createdBy !== user?.uid);
 
   return (
     <Screen edges={['top']}>
@@ -159,12 +195,12 @@ export default function ProfileScreen() {
           </View>
         </Section>
 
-        {/* Group settings */}
-        <Section title="Group" style={styles.section}>
+        {/* Loom settings */}
+        <Section title={t('profile.section.loom')} style={styles.section}>
           <View style={[styles.listCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             <ListItem
-              title="Active Group ID"
-              subtitle={user?.activeGroupId ?? 'No group selected'}
+              title={t('profile.group.activeLoomId')}
+              subtitle={user?.activeGroupId ?? '—'}
               left={<IconSymbol name="person.fill" size={20} color={c.primary} />}
             />
             <Divider inset={52} />
@@ -172,7 +208,7 @@ export default function ProfileScreen() {
               <TextInput
                 value={inviteEmail}
                 onChangeText={setInviteEmail}
-                placeholder="invitee@email.com"
+                placeholder={t('onboarding.inviteEmailPlaceholder')}
                 placeholderTextColor={c.textDisabled}
                 style={[
                   styles.inviteInput,
@@ -185,7 +221,9 @@ export default function ProfileScreen() {
                 onPress={handleCreateInvite}
                 style={[styles.inviteButton, { backgroundColor: c.primary }]}
               >
-                <Text style={[styles.inviteButtonText, { color: c.primaryForeground }]}>Invite</Text>
+                <Text style={[styles.inviteButtonText, { color: c.primaryForeground }]}>
+                  {t('onboarding.sendInvite')}
+                </Text>
               </TouchableOpacity>
             </View>
             {inviteMessage ? (
@@ -196,16 +234,27 @@ export default function ProfileScreen() {
               onPress={() => router.push('/group-onboarding')}
             >
               <Text style={[styles.openOnboardingText, { color: c.primary }]}>
-                Open Group Setup
+                {t('profile.group.openLoomSetup')}
               </Text>
             </TouchableOpacity>
+
+            {showLeaveLoom ? (
+              <>
+                <Divider inset={52} />
+                <TouchableOpacity onPress={handleLeaveLoom} style={styles.openOnboarding}>
+                  <Text style={[styles.openOnboardingText, { color: c.destructive }]}>
+                    {t('profile.group.leaveLoom')}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
 
             {groups && groups.length > 1 ? (
               <>
                 <Divider inset={52} />
                 <View style={styles.groupSwitchWrap}>
                   <Text style={[styles.groupSwitchTitle, { color: c.textSecondary }]}>
-                    Switch Group
+                    {t('profile.group.switchLoom')}
                   </Text>
                   {groups.map((g) => {
                     const active = g.id === user?.activeGroupId;

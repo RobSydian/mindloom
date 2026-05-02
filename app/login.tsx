@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  ScrollView,
+  View,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthContext } from '@/context/AuthContext';
 import { Colors, Typography, Spacing, Radius, Shadow, ComponentTokens } from '@/constants/theme';
 import { t } from '@/constants/i18n';
@@ -24,7 +25,7 @@ export default function LoginScreen() {
   const c = Colors[scheme];
   const styles = makeStyles(c);
 
-  const { signIn, signOut, user } = useAuthContext();
+  const { signIn, signOut, user, sendPasswordReset } = useAuthContext();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,6 +33,9 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSignIn() {
     if (!email.trim() || !password) {
@@ -39,10 +43,29 @@ export default function LoginScreen() {
       return;
     }
     setError(null);
+    setResetSuccess(false);
     setIsLoading(true);
     try {
       await signIn(email.trim().toLowerCase(), password);
-      router.replace('/(tabs)/dashboard');
+      router.replace('/');
+    } catch (e: unknown) {
+      setError(t(getAuthErrorKey(e)));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleSendReset() {
+    if (!email.trim()) {
+      setError(t('reset.error.missingEmail'));
+      return;
+    }
+    setError(null);
+    setResetSuccess(false);
+    setIsLoading(true);
+    try {
+      await sendPasswordReset(email.trim().toLowerCase());
+      setResetSuccess(true);
     } catch (e: unknown) {
       setError(t(getAuthErrorKey(e)));
     } finally {
@@ -59,9 +82,9 @@ export default function LoginScreen() {
     }
   }
 
-  function fillDemo() {
-    setEmail('alex@mindloom.app');
-    setPassword('password');
+  function exitForgotMode() {
+    setForgotMode(false);
+    setResetSuccess(false);
     setError(null);
   }
 
@@ -76,20 +99,25 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo / wordmark */}
           <View style={styles.logoArea}>
             <View style={styles.logoMark}>
               <Text style={styles.logoMarkText}>M</Text>
             </View>
-            <Text style={styles.wordmark}>mindloom</Text>
-            <Text style={styles.tagline}>{t('login.tagline')}</Text>
+            <Text style={styles.brandTitle}>{t('login.brandTitle')}</Text>
+            <Text style={styles.taglineSecondary}>{t('login.taglineSecondary')}</Text>
           </View>
 
-          {/* Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>{t('login.welcomeBack')}</Text>
+            <Text style={styles.cardHeadline}>{t('login.welcomeMindloomer')}</Text>
 
-            {/* Email */}
+            {resetSuccess ? (
+              <View style={[styles.banner, { backgroundColor: c.successSubtle, borderColor: c.success }]}>
+                <Text style={[styles.bannerText, { color: c.successForeground }]}>
+                  {t('reset.success.sentAffirmative')}
+                </Text>
+              </View>
+            ) : null}
+
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t('login.email')}</Text>
               <TextInput
@@ -103,63 +131,91 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoComplete="email"
-                returnKeyType="next"
+                returnKeyType={forgotMode ? 'done' : 'next'}
               />
             </View>
 
-            {/* Password */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{t('login.password')}</Text>
-              <TextInput
-                style={[styles.input, passwordFocused && styles.inputFocused]}
-                placeholder={t('login.passwordPlaceholder')}
-                placeholderTextColor={c.textDisabled}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-                secureTextEntry
-                autoComplete="password"
-                returnKeyType="done"
-                onSubmitEditing={handleSignIn}
-              />
-            </View>
+            {!forgotMode ? (
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>{t('login.password')}</Text>
+                <View style={[styles.passwordRow, passwordFocused && styles.passwordRowFocused]}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder={t('login.passwordPlaceholder')}
+                    placeholderTextColor={c.textDisabled}
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
+                    secureTextEntry={!showPassword}
+                    autoComplete="password"
+                    returnKeyType="done"
+                    onSubmitEditing={handleSignIn}
+                  />
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                    onPress={() => setShowPassword((v) => !v)}
+                    style={styles.passwordReveal}
+                    hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                  >
+                    <IconSymbol
+                      name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
+                      size={22}
+                      color={c.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
 
-            {/* Error */}
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            {/* Sign in */}
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
-              onPress={handleSignIn}
+              onPress={forgotMode ? handleSendReset : handleSignIn}
               disabled={isLoading}
               activeOpacity={0.85}
             >
               {isLoading ? (
                 <ActivityIndicator color={c.primaryForeground} size="small" />
               ) : (
-                <Text style={styles.buttonText}>{t('login.signIn')}</Text>
+                <Text style={styles.buttonText}>
+                  {forgotMode ? t('reset.submit') : t('login.signIn')}
+                </Text>
               )}
             </TouchableOpacity>
 
-            <View style={styles.actionsRow}>
-              <TouchableOpacity onPress={() => router.push('/register')} style={styles.inlineAction}>
-                <Text style={styles.inlineActionText}>{t('login.createAccount')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={fillDemo} style={styles.inlineAction}>
-                <Text style={styles.inlineActionText}>{t('login.useDemo')}</Text>
-              </TouchableOpacity>
-            </View>
+            {!forgotMode ? (
+              <>
+                <TouchableOpacity
+                  onPress={() => router.push('/register')}
+                  style={styles.centerLink}
+                >
+                  <Text style={styles.inlineActionText}>{t('login.createAccount')}</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push('/register?mode=reset')}
-              style={styles.demoRow}
-            >
-              <Text style={styles.demoText}>{t('login.forgotPassword')}</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setForgotMode(true);
+                    setError(null);
+                    setResetSuccess(false);
+                  }}
+                  style={styles.centerLink}
+                >
+                  <Text style={styles.demoText}>{t('login.forgotPassword')}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity onPress={exitForgotMode} style={styles.centerLink}>
+                <Text style={styles.inlineActionText}>{t('login.backToSignIn')}</Text>
+              </TouchableOpacity>
+            )}
 
             {user ? (
-              <TouchableOpacity onPress={handleClearSession} style={styles.demoRow}>
+              <TouchableOpacity onPress={handleClearSession} style={styles.centerLink}>
                 <Text style={[styles.demoText, { opacity: 0.7 }]}>
                   {t('login.signOutCurrent', { email: user.email || user.displayName })}
                 </Text>
@@ -207,14 +263,15 @@ function makeStyles(c: typeof Colors.light) {
       fontSize: 32,
       fontWeight: '700',
     },
-    wordmark: {
+    brandTitle: {
       ...Typography.h2,
       color: c.text,
       letterSpacing: -0.5,
     },
-    tagline: {
+    taglineSecondary: {
       ...Typography.body,
       color: c.textSecondary,
+      textAlign: 'center',
     },
     card: {
       backgroundColor: c.surface,
@@ -225,10 +282,20 @@ function makeStyles(c: typeof Colors.light) {
       borderColor: c.border,
       ...Shadow.md,
     },
-    cardTitle: {
+    cardHeadline: {
       ...Typography.h3,
       color: c.text,
       marginBottom: Spacing.xs,
+    },
+    banner: {
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+    },
+    bannerText: {
+      ...Typography.bodySm,
+      textAlign: 'center',
     },
     fieldGroup: {
       gap: Spacing.xs,
@@ -251,6 +318,33 @@ function makeStyles(c: typeof Colors.light) {
       borderColor: c.primary,
       backgroundColor: c.surface,
     },
+    passwordRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: ComponentTokens.input.height,
+      backgroundColor: c.muted,
+      borderRadius: ComponentTokens.input.borderRadius,
+      borderWidth: ComponentTokens.input.borderWidth,
+      borderColor: c.border,
+      paddingRight: Spacing.xs,
+    },
+    passwordRowFocused: {
+      borderColor: c.primary,
+      backgroundColor: c.surface,
+    },
+    passwordInput: {
+      flex: 1,
+      height: ComponentTokens.input.height,
+      paddingHorizontal: ComponentTokens.input.paddingH,
+      color: c.text,
+      fontSize: ComponentTokens.input.fontSize,
+    },
+    passwordReveal: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      minWidth: 44,
+      minHeight: 44,
+    },
     errorText: {
       ...Typography.bodySm,
       color: c.destructive,
@@ -271,17 +365,7 @@ function makeStyles(c: typeof Colors.light) {
       fontSize: ComponentTokens.button.lg.fontSize,
       fontWeight: '600',
     },
-    demoRow: {
-      alignItems: 'center',
-      paddingVertical: Spacing.xs,
-    },
-    actionsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      gap: Spacing.md,
-    },
-    inlineAction: {
-      flex: 1,
+    centerLink: {
       alignItems: 'center',
       paddingVertical: Spacing.xs,
     },

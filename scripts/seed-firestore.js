@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 
+/**
+ * Seeds Firestore from a payload JSON (not firestore.schema.json — that file is documentation).
+ *
+ * Supported top-level arrays: users, groups, groupInvites, impressions, calendarEvents, goals,
+ * joinRequests (optional — docs at groups/{groupId}/joinRequests/{requesterUid}).
+ *
+ * Run: pnpm seed:firestore -- --key /path/to/serviceAccount.json [--seed ./firebase/seed.multi-group.payload.json]
+ */
+
 /* eslint-disable no-console */
 const fs = require('fs');
 const path = require('path');
@@ -31,6 +40,8 @@ function toDate(value) {
 
 function validateSeedReferences(seed) {
   const knownUserUids = new Set((seed.users ?? []).map((u) => u.uid));
+  const knownGroupIds = new Set((seed.groups ?? []).map((g) => g.id));
+  const groupById = new Map((seed.groups ?? []).map((g) => [g.id, g]));
   const errors = [];
 
   const ensureKnownUid = (uid, label) => {
@@ -62,6 +73,19 @@ function validateSeedReferences(seed) {
 
   for (const g of seed.goals ?? []) {
     ensureKnownUid(g.authorId, `goals/${g.id}.authorId`);
+  }
+
+  for (const jr of seed.joinRequests ?? []) {
+    if (jr.groupId && !knownGroupIds.has(jr.groupId)) {
+      errors.push(`joinRequests references unknown groupId "${jr.groupId}"`);
+    }
+    ensureKnownUid(jr.requesterUid, `joinRequests ${jr.groupId}/joinRequests.requesterUid`);
+    const g = groupById.get(jr.groupId);
+    if (g && (g.memberIds ?? []).includes(jr.requesterUid)) {
+      errors.push(
+        `joinRequests: requester "${jr.requesterUid}" is already in memberIds for groups/${jr.groupId} (remove them or drop this join request)`
+      );
+    }
   }
 
   if (errors.length > 0) {
@@ -269,6 +293,29 @@ async function run() {
       { merge: true }
     );
     console.log(`Upserted goals/${g.id}`);
+  }
+
+  // joinRequests under groups/{groupId}/joinRequests/{requesterUid} (optional)
+  for (const jr of seed.joinRequests ?? []) {
+    const reqUid = mapUid(jr.requesterUid);
+    const status = jr.status ?? 'pending';
+    const createdAtIso = new Date().toISOString();
+    await db
+      .collection('groups')
+      .doc(jr.groupId)
+      .collection('joinRequests')
+      .doc(reqUid)
+      .set(
+        {
+          requesterUid: reqUid,
+          status,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+          createdAtIso,
+        },
+        { merge: true }
+      );
+    console.log(`Upserted groups/${jr.groupId}/joinRequests/${reqUid}`);
   }
 
   console.log('Seed completed.');

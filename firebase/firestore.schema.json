@@ -8,6 +8,7 @@
         "displayName": "string",
         "photoURL": "string | null",
         "activeGroupId": "string | null",
+        "sharedGroupId": "string | null (mirror of activeGroupId for backward compatibility)",
         "createdAt": "timestamp",
         "updatedAt": "timestamp"
       }
@@ -20,6 +21,19 @@
         "memberIds": "string[]",
         "createdAt": "timestamp",
         "updatedAt": "timestamp"
+      },
+      "subcollections": {
+        "joinRequests": {
+          "documentId": "{requesterUid}",
+          "description": "Someone asks to join this Loom; creator approves/rejects. Doc deleted after pending cancelled or when superseded after rejection.",
+          "fields": {
+            "requesterUid": "string",
+            "status": "pending | accepted | rejected",
+            "createdAt": "timestamp",
+            "updatedAt": "timestamp",
+            "createdAtIso": "string (ISO 8601, convenience duplicate for clients)"
+          }
+        }
       }
     },
     "groupInvites": {

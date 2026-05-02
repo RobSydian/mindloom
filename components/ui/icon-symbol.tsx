@@ -37,6 +37,8 @@ const MAPPING = {
   'magnifyingglass': 'search',
   'bell.fill': 'notifications',
   'gear': 'settings',
+  'eye.fill': 'visibility',
+  'eye.slash.fill': 'visibility-off',
 } as IconMapping;
 
 /**

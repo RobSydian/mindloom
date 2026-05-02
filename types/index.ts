@@ -31,6 +31,15 @@ export interface Group {
   updatedAt: string;
 }
 
+export type JoinRequestStatus = 'pending' | 'accepted' | 'rejected';
+
+export interface LoomJoinRequest {
+  requesterUid: string;
+  status: JoinRequestStatus;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export type InviteStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
 
 export interface GroupInvite {

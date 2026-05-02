@@ -89,9 +89,9 @@ export async function createGroupInvite(input: CreateInviteInput): Promise<Creat
     inviteId
   )}&token=${encodeURIComponent(rawToken)}&email=${encodeURIComponent(emailLower)}`;
 
-  const subject = encodeURIComponent('Join my Mindloom group');
+  const subject = encodeURIComponent('Join my Loom on Mindloom');
   const body = encodeURIComponent(
-    `I invited you to my Mindloom group.\n\nOpen this link to join:\n${deepLink}\n\nThis invite expires in ${INVITE_TTL_DAYS} days.`
+    `You're invited to a Loom on Mindloom — a shared space for memories and impressions.\n\nOpen this link in the app to join:\n${deepLink}\n\nThis invite expires in ${INVITE_TTL_DAYS} days.`
   );
   const mailtoLink = `mailto:${encodeURIComponent(emailLower)}?subject=${subject}&body=${body}`;
 
