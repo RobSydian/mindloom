@@ -4,8 +4,6 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-## [1.1.0] — 2026-05-02
-
 ### Added
 
 - Firebase-backed login and registration with routing gate (dashboard vs Loom onboarding).
